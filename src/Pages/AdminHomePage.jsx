@@ -4,7 +4,9 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { Snackbar } from "@material-ui/core";
 import Alert from "@material-ui/lab/Alert";
+import ImageUploading from 'react-images-uploading';
 import styles from "./CommonStyle.module.css";
+import placeholder from '../assets/index.jpeg';
 
 const AdminHomePage = () => {
   const history = useHistory();
@@ -18,7 +20,6 @@ const AdminHomePage = () => {
     stock: "",
     region: "",
   });
-  const [image, setImage] = useState();
   const [productToEdit, setProductToEdit] = useState([]);
   const [products, setProducts] = useState([]);
   const [regions, setRegions] = useState([]);
@@ -108,32 +109,37 @@ const AdminHomePage = () => {
 
   const handleAddProduct = () => {
     // to add products
-    if (data.title === "" || data.description === '' || data.price === '' || data.sku === '' || data.stock === '') {
+    const productDetails = {
+      product: {
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        sku: data.sku,
+        stock: parseInt(data.stock),
+        region_id: parseInt(
+          regions.length === 1 || data.region === null
+            ? regions[0].id
+            : data.region.title !== undefined
+            ? data.region.id
+            : data.region
+        ),
+        image: images[0].data_url,
+      },
+    };
+    if (
+      data.title === "" ||
+      data.description === "" ||
+      data.price === "" ||
+      data.sku === "" ||
+      data.stock === ""
+    ) {
       setError(true);
       return;
     }
     (async () => {
-      const fd = new FormData();
-      fd.append("image_url", image);
       var resp = await axios.post(
         "https://simpleshop-app.herokuapp.com//api/v1/products",
-        {
-          product: {
-            title: data.title,
-            description: data.description,
-            price: data.price,
-            sku: data.sku,
-            stock: parseInt(data.stock),
-            region_id: parseInt(
-              regions.length === 1 || data.region === null
-                ? regions[0].id
-                : data.region.title !== undefined
-                ? data.region.id
-                : data.region
-            ),
-            image: image,
-          },
-        },
+        productDetails,
         {
           headers: headersProvider(),
         }
@@ -162,26 +168,27 @@ const AdminHomePage = () => {
 
   const handleProductUpdate = () => {
     // to edit/update the existing products
+    const productDetails = {
+        product: {
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          sku: data.sku,
+          stock: parseInt(data.stock),
+          region_id: parseInt(
+            regions.length === 1 || data.region === null
+              ? regions[0].id
+              : data.region.title !== undefined
+              ? data.region.id
+              : data.region
+          ),
+          image: images[0].data_url,
+        },
+      };
     (async () => {
       var resp = await axios.put(
         `https://simpleshop-app.herokuapp.com/api/v1/products/${data.id}`,
-        {
-          product: {
-            title: data.title,
-            description: data.description,
-            price: data.price,
-            sku: data.sku,
-            stock: parseInt(data.stock),
-            region_id: parseInt(
-              regions.length === 1 || data.region === null
-                ? regions[0].id
-                : data.region.title !== undefined
-                ? data.region.id
-                : data.region
-            ),
-            image: null,
-          },
-        },
+        productDetails,
         {
           headers: headersProvider(),
         }
@@ -208,6 +215,15 @@ const AdminHomePage = () => {
     setError(false);
   };
 
+  const [images, setImages] = React.useState([]);
+  const maxNumber = 69;
+
+  const onChange = (imageList, addUpdateIndex) => {
+    // data for submit
+    console.log(imageList, addUpdateIndex);
+    setImages(imageList);
+  };
+
   return (
     <div>
       {!addProduct ? (
@@ -215,6 +231,7 @@ const AdminHomePage = () => {
           <h1>Manage Product List By Admin</h1>
           <table style={{ margin: "auto" }}>
             <tr>
+              <th></th>
               <th>Title</th>
               <th>Description</th>
               <th>Price</th>
@@ -226,10 +243,10 @@ const AdminHomePage = () => {
             {products.map((product) => (
               <tr>
                 <td>
-                  <div style={{ display: "flex" }}>
-                    <img src={product.image_url} alt="product" />
-                    <div style={{ marginLeft: "5px" }}>{product.title}</div>
-                  </div>
+                  <img src={product.image_url !== null ? product.image_url : placeholder} alt="product" width="50px" />
+                </td>
+                <td>
+                  <div style={{ marginLeft: "5px" }}>{product.title}</div>
                 </td>
                 <td>{product.description}</td>
                 <td>{product.price}</td>
@@ -270,7 +287,14 @@ const AdminHomePage = () => {
           </div>
         </div>
       ) : (
-        <div style={{ marginTop: "60px", marginBottom: "50px", marginLeft: '20px', marginRight: '40px' }}>
+        <div
+          style={{
+            marginTop: "60px",
+            marginBottom: "50px",
+            marginLeft: "20px",
+            marginRight: "40px",
+          }}
+        >
           <Snackbar open={error} autoHideDuration={6000} onClose={handleClose}>
             <Alert severity="error" onClose={handleClose}>
               All fields are required
@@ -359,12 +383,51 @@ const AdminHomePage = () => {
             </div>
             <div>
               <div>Image</div>
-              <input
+              {/* <input
                 type="file"
                 name="image_url"
                 className={styles.textFields}
                 onChange={(e) => setImage(e.target.files[0])}
-              />
+              /> */}
+              <ImageUploading
+        multiple
+        value={images}
+        onChange={onChange}
+        maxNumber={maxNumber}
+        dataURLKey="data_url"
+      >
+        {({
+          imageList,
+          onImageUpload,
+          onImageRemoveAll,
+          onImageUpdate,
+          onImageRemove,
+          isDragging,
+          dragProps,
+        }) => (
+          // write your building UI
+          <div className="upload__image-wrapper">
+            <button
+              style={isDragging ? { color: 'red' } : undefined}
+              onClick={onImageUpload}
+              {...dragProps}
+            >
+              Click or Drop here
+            </button>
+            &nbsp;
+            <button onClick={onImageRemoveAll}>Remove all images</button>
+            {imageList.map((image, index) => (
+              <div key={index} className="image-item">
+                <img src={image['data_url']} alt="" width="100" />
+                <div className="image-item__btn-wrapper">
+                  <button onClick={() => onImageUpdate(index)}>Update</button>
+                  <button onClick={() => onImageRemove(index)}>Remove</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </ImageUploading>
             </div>
           </div>
           <div

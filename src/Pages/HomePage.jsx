@@ -4,6 +4,7 @@ import Cookies from 'js-cookie';
 import axios from 'axios';
 import styles from "./CommonStyle.module.css";
 import Cart from "./Cart";
+import placeholder from '../assets/index.jpeg';
 
 const HomePage = () => {
   const history = useHistory();
@@ -74,6 +75,8 @@ const HomePage = () => {
           <h1>Product List</h1>
           <table style={{ margin: "auto" }}>
             <tr>
+              <th></th>
+              <th></th>
               <th>Title</th>
               <th>Description</th>
               <th>Price</th>
@@ -83,13 +86,18 @@ const HomePage = () => {
             </tr>
             {products.map((product) => (
               <tr>
-                <td style={{ display: "flex" }}>
+                <td>
                   <input
                     type="checkbox"
                     value={product.title}
                     id={product.stock}
                     onClick={(e) => handleCheckbox(e)}
                   />
+                </td>
+                <td>
+                  <img src={product.image_url !== null ? product.image_url : placeholder} alt="product" width="50px" />
+                </td>
+                <td>
                   <div style={{ marginLeft: "5px" }}>{product.title}</div>
                 </td>
                 <td>{product.description}</td>

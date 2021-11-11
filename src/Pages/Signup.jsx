@@ -90,7 +90,7 @@ const Signup = () => {
           </button>
           <div className={styles.login} style={{ display: 'flex' }}>
             <div>Already have an account?</div>
-            <div onClick={() => history.push('/login')}>Login</div>
+            <a onClick={() => history.push('/login')}>Login</a>
           </div>
         </form>
       </div>
