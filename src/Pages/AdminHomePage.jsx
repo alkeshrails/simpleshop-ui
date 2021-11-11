@@ -146,6 +146,7 @@ const AdminHomePage = () => {
       );
       setAddProduct(false);
       setProductToEdit([]);
+      setImages([]);
       resp = await axios.get(
         "https://simpleshop-app.herokuapp.com//api/v1/products",
         {
@@ -195,6 +196,7 @@ const AdminHomePage = () => {
       );
       setAddProduct(false);
       setProductToEdit([]);
+      setImages([]);
       resp = await axios.get(
         "https://simpleshop-app.herokuapp.com//api/v1/products",
         {
@@ -390,7 +392,6 @@ const AdminHomePage = () => {
                 onChange={(e) => setImage(e.target.files[0])}
               /> */}
               <ImageUploading
-        multiple
         value={images}
         onChange={onChange}
         maxNumber={maxNumber}
