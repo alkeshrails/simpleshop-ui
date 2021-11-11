@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { Snackbar } from "@material-ui/core";
+import Alert from "@material-ui/lab/Alert";
 import styles from "./CommonStyle.module.css";
 
 const AdminHomePage = () => {
@@ -16,17 +18,20 @@ const AdminHomePage = () => {
     stock: "",
     region: "",
   });
+  const [image, setImage] = useState();
   const [productToEdit, setProductToEdit] = useState([]);
   const [products, setProducts] = useState([]);
   const [regions, setRegions] = useState([]);
+  const [error, setError] = useState(false);
 
-  const HandleChangeInput = (e) => {                   // to take user input
+  const HandleChangeInput = (e) => {
+    // to take user input
     setData({ ...data, [e.target.name]: e.target.value });
   };
 
-  const HandleImageInput = (e) => {
-    setData({ ...data, [e.target.name]: e.target.files });
-  };
+  //   const HandleImageInput = (e) => {
+  //     setData(setImage(e.target.files[0]));
+  //   };
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -40,7 +45,8 @@ const AdminHomePage = () => {
     };
   };
 
-  useEffect(() => {                                  // to fetch all the products
+  useEffect(() => {
+    // to fetch all the products
     if (products.length === 0) {
       (async () => {
         const resp = await axios.get(
@@ -56,7 +62,8 @@ const AdminHomePage = () => {
     }
   });
 
-  useEffect(() => {                                  // to fetch all the regions
+  useEffect(() => {
+    // to fetch all the regions
     if (regions.length === 0) {
       (async () => {
         const resp = await axios.get(
@@ -72,7 +79,8 @@ const AdminHomePage = () => {
     }
   });
 
-  const handleDelete = (id) => {                        // to delete the products
+  const handleDelete = (id) => {
+    // to delete the products
     (async () => {
       var resp = await axios.delete(
         `https://simpleshop-app.herokuapp.com/api/v1/products/${id}`,
@@ -92,17 +100,23 @@ const AdminHomePage = () => {
     })();
   };
 
-  const handleLogout = () => {               // to logout from an application
+  const handleLogout = () => {
+    // to logout from an application
     Cookies.remove("token");
     history.push("/login");
   };
 
-  const handleAddProduct = () => {           // to add products
+  const handleAddProduct = () => {
+    // to add products
+    if (data.title === "" || data.description === '' || data.price === '' || data.sku === '' || data.stock === '') {
+      setError(true);
+      return;
+    }
     (async () => {
       const fd = new FormData();
-      fd.append('image_url', data.image_url[0]);
+      fd.append("image_url", image);
       var resp = await axios.post(
-        'https://simpleshop-app.herokuapp.com//api/v1/products',
+        "https://simpleshop-app.herokuapp.com//api/v1/products",
         {
           product: {
             title: data.title,
@@ -110,8 +124,14 @@ const AdminHomePage = () => {
             price: data.price,
             sku: data.sku,
             stock: parseInt(data.stock),
-            region_id: parseInt((regions.length === 1 || data.region === null) ? regions[0].id : data.region),
-            image: fd,
+            region_id: parseInt(
+              regions.length === 1 || data.region === null
+                ? regions[0].id
+                : data.region.title !== undefined
+                ? data.region.id
+                : data.region
+            ),
+            image: image,
           },
         },
         {
@@ -140,87 +160,122 @@ const AdminHomePage = () => {
     setData({ ...a });
   };
 
-  const handleProductUpdate = () => {                  // to edit/update the existing products
+  const handleProductUpdate = () => {
+    // to edit/update the existing products
     (async () => {
-      const resp = await axios.put(
+      var resp = await axios.put(
         `https://simpleshop-app.herokuapp.com/api/v1/products/${data.id}`,
         {
-            product: {
-              title: data.title,
-              description: data.description,
-              price: data.price,
-              sku: data.sku,
-              stock: parseInt(data.stock),
-              region_id: parseInt((regions.length === 1 || data.region === null) ? regions[0].id : data.region),
-              image: null,
-            },
+          product: {
+            title: data.title,
+            description: data.description,
+            price: data.price,
+            sku: data.sku,
+            stock: parseInt(data.stock),
+            region_id: parseInt(
+              regions.length === 1 || data.region === null
+                ? regions[0].id
+                : data.region.title !== undefined
+                ? data.region.id
+                : data.region
+            ),
+            image: null,
           },
+        },
         {
           headers: headersProvider(),
         }
       );
       setAddProduct(false);
       setProductToEdit([]);
+      resp = await axios.get(
+        "https://simpleshop-app.herokuapp.com//api/v1/products",
+        {
+          headers: headersProvider(),
+        }
+      );
+      if (resp && resp.data && resp.data.length !== 0) {
+        setProducts(resp.data);
+      }
     })();
+  };
+
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setError(false);
   };
 
   return (
     <div>
-      <div>
-        <h1>Manage Product List By Admin</h1>
-        <table style={{ margin: "auto" }}>
-          <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Price</th>
-            <th>SKU</th>
-            <th>Stock</th>
-            <th>Region</th>
-            <th>Actions</th>
-          </tr>
-          {products.map((product) => (
+      {!addProduct ? (
+        <div>
+          <h1>Manage Product List By Admin</h1>
+          <table style={{ margin: "auto" }}>
             <tr>
-              <td style={{ display: "flex" }}>
-                <img src={product.image_url} alt="product" />
-                <div style={{ marginLeft: "5px" }}>{product.title}</div>
-              </td>
-              <td>{product.description}</td>
-              <td>{product.price}</td>
-              <td>{product.sku}</td>
-              <td>{product.stock}</td>
-              <td>{product.region.title}</td>
-              <td>
-                <button
-                  style={{ marginRight: "10px", marginBottom: "4px" }}
-                  className={styles.buttonStyle}
-                  onClick={() => handleEditProduct(product.id)}
-                >
-                  Edit
-                </button>
-                <button
-                  className={styles.buttonStyle}
-                  onClick={() => handleDelete(product.id)}
-                >
-                  Delete
-                </button>
-              </td>
+              <th>Title</th>
+              <th>Description</th>
+              <th>Price</th>
+              <th>SKU</th>
+              <th>Stock</th>
+              <th>Region</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </table>
-        <div style={{ marginTop: "30px", marginBottom: "50px" }}>
-          <button onClick={handleLogout} className={styles.logoutButtonStyle}>
-            Logout
-          </button>
-          <button
-            className={styles.buttonStyle}
-            onClick={() => setAddProduct(true)}
-          >
-            Add Product
-          </button>
+            {products.map((product) => (
+              <tr>
+                <td>
+                  <div style={{ display: "flex" }}>
+                    <img src={product.image_url} alt="product" />
+                    <div style={{ marginLeft: "5px" }}>{product.title}</div>
+                  </div>
+                </td>
+                <td>{product.description}</td>
+                <td>{product.price}</td>
+                <td>{product.sku}</td>
+                <td>{product.stock}</td>
+                <td>{product.region.title}</td>
+                <td>
+                  <button
+                    style={{ marginRight: "10px", marginBottom: "4px" }}
+                    className={styles.buttonStyle}
+                    onClick={() => handleEditProduct(product.id)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className={styles.buttonStyle}
+                    onClick={() => handleDelete(product.id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </table>
+          <div style={{ marginTop: "30px", marginBottom: "50px" }}>
+            <button onClick={handleLogout} className={styles.logoutButtonStyle}>
+              Logout
+            </button>
+            <button
+              className={styles.buttonStyle}
+              onClick={() => {
+                setAddProduct(true);
+                setProductToEdit([]);
+              }}
+            >
+              Add Product
+            </button>
+          </div>
         </div>
-      </div>
-      {addProduct && (
-        <div style={{ marginTop: "30px", marginBottom: "50px" }}>
+      ) : (
+        <div style={{ marginTop: "60px", marginBottom: "50px", marginLeft: '20px', marginRight: '40px' }}>
+          <Snackbar open={error} autoHideDuration={6000} onClose={handleClose}>
+            <Alert severity="error" onClose={handleClose}>
+              All fields are required
+            </Alert>
+          </Snackbar>
           <div
             style={{
               display: "flex",
@@ -279,7 +334,7 @@ const AdminHomePage = () => {
             <div>
               <div>Stock</div>
               <input
-                type="text"
+                type="number"
                 name="stock"
                 defaultValue={
                   productToEdit.length !== 0 ? productToEdit[0].stock : ""
@@ -308,7 +363,7 @@ const AdminHomePage = () => {
                 type="file"
                 name="image_url"
                 className={styles.textFields}
-                onChange={(e) => HandleImageInput(e)}
+                onChange={(e) => setImage(e.target.files[0])}
               />
             </div>
           </div>
@@ -327,9 +382,7 @@ const AdminHomePage = () => {
                 name="region"
                 onChange={(e) => HandleChangeInput(e)}
                 defaultValue={
-                  productToEdit.length !== 0
-                    ? productToEdit[0].region.country
-                    : ""
+                  productToEdit.length !== 0 ? productToEdit[0].region.id : ""
                 }
               >
                 {regions.map((region) => (
@@ -357,7 +410,7 @@ const AdminHomePage = () => {
             }}
             className={styles.logoutButtonStyle}
           >
-            Cancel
+            Back
           </button>
           <button
             onClick={
